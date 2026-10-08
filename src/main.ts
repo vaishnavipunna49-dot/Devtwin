@@ -1,3 +1,5 @@
+import "./style.css";
+
 interface Component {
   name: string;
   type: string;
@@ -56,7 +58,11 @@ function getTier(rps: number): string {
   return "Extreme";
 }
 
-function analyze(requirement: string, users: number, rps: number): Result {
+function analyze(
+  requirement: string,
+  users: number,
+  rps: number
+): Result {
   const text = requirement.toLowerCase();
 
   const components: Component[] = [
@@ -233,13 +239,13 @@ function analyze(requirement: string, users: number, rps: number): Result {
     );
   }
 
-  if (text.includes("ai")) {
+  if (/ai|machine learning|ml/.test(text)) {
     bottlenecks.push(
       "AI inference can require significant compute."
     );
   }
 
-  if (text.includes("tracking")) {
+  if (/tracking|location|gps/.test(text)) {
     bottlenecks.push(
       "Realtime location writes can increase database load."
     );
@@ -263,16 +269,47 @@ function analyze(requirement: string, users: number, rps: number): Result {
     );
   }
 
+  if (/ai|recommend|machine learning|ml/.test(text)) {
+    recommendations.push(
+      "Cache repeated AI results and isolate AI workloads."
+    );
+  }
+
   let score = 70;
 
   if (rps >= 1000) score += 7;
   if (rps >= 5000) score += 7;
-  if (components.some(c => c.name === "Load Balancer")) score += 5;
-  if (components.some(c => c.name === "Queue")) score += 4;
-  if (components.some(c => c.name === "Read Replica")) score += 3;
+
+  if (
+    components.some(
+      c => c.name === "Load Balancer"
+    )
+  ) {
+    score += 5;
+  }
+
+  if (
+    components.some(
+      c => c.name === "Queue"
+    )
+  ) {
+    score += 4;
+  }
+
+  if (
+    components.some(
+      c => c.name === "Read Replica"
+    )
+  ) {
+    score += 3;
+  }
 
   score -= bottlenecks.length * 3;
-  score = Math.max(0, Math.min(100, score));
+
+  score = Math.max(
+    0,
+    Math.min(100, score)
+  );
 
   const cost = Math.round(
     35 +
@@ -296,83 +333,124 @@ function analyze(requirement: string, users: number, rps: number): Result {
 }
 
 function render(result: Result) {
-  const results = document.querySelector("#results")!;
+  const results =
+    document.querySelector("#results")!;
 
   results.innerHTML = `
     <section class="card">
+
       <div class="heading">
         <div>
-          <span class="kicker">02 / ARCHITECTURE</span>
-          <h2>Recommended System Design</h2>
+          <span class="kicker">
+            02 / ARCHITECTURE
+          </span>
+
+          <h2>
+            Recommended System Design
+          </h2>
         </div>
 
-        <button id="printBtn" class="small-btn">
+        <button
+          id="printBtn"
+          class="small-btn"
+        >
           Print / PDF
         </button>
       </div>
 
       <div class="metrics">
+
         <div>
           <span>Architecture Score</span>
-          <strong>${result.score}/100</strong>
+          <strong>
+            ${result.score}/100
+          </strong>
         </div>
 
         <div>
           <span>Traffic</span>
-          <strong>${result.tier}</strong>
+          <strong>
+            ${result.tier}
+          </strong>
         </div>
 
         <div>
           <span>Peak RPS</span>
-          <strong>${result.rps.toLocaleString()}</strong>
+          <strong>
+            ${result.rps.toLocaleString()}
+          </strong>
         </div>
 
         <div>
           <span>Users</span>
-          <strong>${result.users.toLocaleString()}</strong>
+          <strong>
+            ${result.users.toLocaleString()}
+          </strong>
         </div>
 
         <div>
           <span>Estimated Cost</span>
-          <strong>$${result.cost}/mo</strong>
+          <strong>
+            $${result.cost}/mo
+          </strong>
         </div>
+
       </div>
 
       <div class="architecture">
-        ${result.components.map((c, i) => `
-          <div class="node-wrap">
 
-            <div class="node">
-              <div class="node-icon">
-                ${icons[c.name] || "◈"}
+        ${result.components
+          .map(
+            (c, i) => `
+              <div class="node-wrap">
+
+                <div class="node">
+
+                  <div class="node-icon">
+                    ${icons[c.name] || "◈"}
+                  </div>
+
+                  <strong>
+                    ${escapeHTML(c.name)}
+                  </strong>
+
+                  <small>
+                    ${escapeHTML(c.type)}
+                  </small>
+
+                  <div class="bar">
+                    <span
+                      style="width:${c.load}%"
+                    ></span>
+                  </div>
+
+                  <em>
+                    ${c.load}% load
+                  </em>
+
+                </div>
+
+                ${
+                  i <
+                  result.components.length - 1
+                    ? `<div class="arrow">→</div>`
+                    : ""
+                }
+
               </div>
+            `
+          )
+          .join("")}
 
-              <strong>${escapeHTML(c.name)}</strong>
-
-              <small>${escapeHTML(c.type)}</small>
-
-              <div class="bar">
-                <span style="width:${c.load}%"></span>
-              </div>
-
-              <em>${c.load}% load</em>
-            </div>
-
-            ${
-              i < result.components.length - 1
-                ? `<div class="arrow">→</div>`
-                : ""
-            }
-
-          </div>
-        `).join("")}
       </div>
+
     </section>
 
     <section class="analysis-grid">
 
       <div class="analysis">
         <h3>📈 Scalability</h3>
+
         <p>
           ${
             result.rps >= 5000
@@ -386,6 +464,7 @@ function render(result: Result) {
 
       <div class="analysis">
         <h3>🗃️ Storage</h3>
+
         <p>
           Managed relational database with caching is recommended.
         </p>
@@ -393,6 +472,7 @@ function render(result: Result) {
 
       <div class="analysis">
         <h3>🏗️ Architecture</h3>
+
         <p>
           ${
             result.components.length >= 8
@@ -403,81 +483,133 @@ function render(result: Result) {
       </div>
 
       <div class="analysis">
+
         <h3>⚠️ Bottlenecks</h3>
 
         ${
           result.bottlenecks.length
-            ? `<ul>
+            ? `
+              <ul>
                 ${result.bottlenecks
-                  .map(b => `<li>${escapeHTML(b)}</li>`)
+                  .map(
+                    b =>
+                      `<li>${escapeHTML(b)}</li>`
+                  )
                   .join("")}
-              </ul>`
-            : "<p>No major bottlenecks detected.</p>"
+              </ul>
+            `
+            : `
+              <p>
+                No major bottlenecks detected.
+              </p>
+            `
         }
+
       </div>
 
       <div class="analysis">
+
         <h3>🧪 Testing</h3>
+
         <ul>
           <li>Unit testing</li>
           <li>API integration testing</li>
           <li>Load testing</li>
           <li>Failure testing</li>
         </ul>
+
       </div>
 
       <div class="analysis">
+
         <h3>🛡️ Risks</h3>
+
         <ul>
           <li>Database growth</li>
           <li>Third-party failures</li>
           <li>Security vulnerabilities</li>
         </ul>
+
       </div>
 
     </section>
 
     <section class="card">
+
       <div class="heading">
+
         <div>
-          <span class="kicker">03 / LIVE SIMULATION</span>
-          <h2>Traffic Simulator</h2>
+          <span class="kicker">
+            03 / LIVE SIMULATION
+          </span>
+
+          <h2>
+            Traffic Simulator
+          </h2>
         </div>
 
-        <button id="simulateBtn" class="small-btn">
+        <button
+          id="simulateBtn"
+          class="small-btn"
+        >
           Start Simulation
         </button>
+
       </div>
 
       <div class="live-grid">
+
         <div>
           <span>Current RPS</span>
-          <strong id="liveRps">${result.rps}</strong>
+          <strong id="liveRps">
+            ${result.rps}
+          </strong>
         </div>
 
         <div>
           <span>Latency</span>
-          <strong id="latency">-- ms</strong>
+          <strong id="latency">
+            -- ms
+          </strong>
         </div>
 
         <div>
           <span>Health</span>
-          <strong id="health">Ready</strong>
+          <strong id="health">
+            Ready
+          </strong>
         </div>
+
       </div>
 
-      <div id="chart" class="chart"></div>
+      <div
+        id="chart"
+        class="chart"
+      ></div>
+
     </section>
 
     <section class="card">
-      <span class="kicker">04 / COMPARISON</span>
-      <h2>Architecture Comparison</h2>
+
+      <span class="kicker">
+        04 / COMPARISON
+      </span>
+
+      <h2>
+        Architecture Comparison
+      </h2>
 
       <div class="compare">
 
         <div>
-          <h3>Simple Baseline</h3>
-          <strong class="big-score">58/100</strong>
+
+          <h3>
+            Simple Baseline
+          </h3>
+
+          <strong class="big-score">
+            58/100
+          </strong>
 
           <ul>
             <li>Lower initial cost</li>
@@ -485,12 +617,19 @@ function render(result: Result) {
             <li>Limited scalability</li>
             <li>More single points of failure</li>
           </ul>
+
         </div>
 
         <div class="recommended">
-          <b>RECOMMENDED</b>
 
-          <h3>DevTwin Architecture</h3>
+          <b>
+            RECOMMENDED
+          </b>
+
+          <h3>
+            DevTwin Architecture
+          </h3>
+
           <strong class="big-score">
             ${result.score}/100
           </strong>
@@ -501,45 +640,80 @@ function render(result: Result) {
             <li>Async processing</li>
             <li>Production-ready growth path</li>
           </ul>
+
         </div>
 
       </div>
+
     </section>
 
     <section class="card">
-      <span class="kicker">05 / RECOMMENDATIONS</span>
-      <h2>Engineering Recommendations</h2>
+
+      <span class="kicker">
+        05 / RECOMMENDATIONS
+      </span>
+
+      <h2>
+        Engineering Recommendations
+      </h2>
 
       <div class="recommendations">
-        ${result.recommendations.map((r, i) => `
-          <div>
-            <b>${String(i + 1).padStart(2, "0")}</b>
-            <span>${escapeHTML(r)}</span>
-          </div>
-        `).join("")}
+
+        ${result.recommendations
+          .map(
+            (r, i) => `
+              <div>
+                <b>
+                  ${String(i + 1).padStart(2, "0")}
+                </b>
+
+                <span>
+                  ${escapeHTML(r)}
+                </span>
+              </div>
+            `
+          )
+          .join("")}
+
       </div>
+
     </section>
   `;
 
   document
     .querySelector("#printBtn")
-    ?.addEventListener("click", () => window.print());
+    ?.addEventListener(
+      "click",
+      () => window.print()
+    );
 
   document
     .querySelector("#simulateBtn")
-    ?.addEventListener("click", () => simulate(result));
+    ?.addEventListener(
+      "click",
+      () => simulate(result)
+    );
 }
 
 function simulate(result: Result) {
-  const rps = document.querySelector("#liveRps")!;
-  const latency = document.querySelector("#latency")!;
-  const health = document.querySelector("#health")!;
-  const chart = document.querySelector("#chart")!;
+  const rps =
+    document.querySelector("#liveRps")!;
+
+  const latency =
+    document.querySelector("#latency")!;
+
+  const health =
+    document.querySelector("#health")!;
+
+  const chart =
+    document.querySelector("#chart")!;
 
   let count = 0;
+
   const points: number[] = [];
 
   const timer = setInterval(() => {
+
     count++;
 
     const current = Math.round(
@@ -557,56 +731,77 @@ function simulate(result: Result) {
       points.shift();
     }
 
-    rps.textContent = current.toLocaleString();
-    latency.textContent = `${delay} ms`;
+    rps.textContent =
+      current.toLocaleString();
+
+    latency.textContent =
+      `${delay} ms`;
 
     health.textContent =
       current > result.rps * 1.05
         ? "Degraded"
         : "Healthy";
 
-    chart.innerHTML = points
-      .map(p => `
-        <span
-          style="
-            height:${Math.min(
-              100,
-              (p / result.rps) * 100
-            )}%
-          "
-        ></span>
-      `)
-      .join("");
+    chart.innerHTML =
+      points
+        .map(
+          p => `
+            <span
+              style="
+                height:${Math.min(
+                  100,
+                  (p / result.rps) * 100
+                )}%
+              "
+            ></span>
+          `
+        )
+        .join("");
 
     if (count >= 20) {
       clearInterval(timer);
     }
+
   }, 400);
 }
 
 app.innerHTML = `
+
   <div class="app">
 
     <nav class="navbar">
+
       <div class="brand">
-        <span class="logo">D</span>
+
+        <span class="logo">
+          D
+        </span>
+
         DevTwin
-        <span class="version">2.0</span>
+
+        <span class="version">
+          2.0
+        </span>
+
       </div>
 
       <span class="status">
         ● Architecture Simulator
       </span>
+
     </nav>
 
     <header class="hero">
+
       <span class="kicker">
         AI-INSPIRED SYSTEM DESIGN LAB
       </span>
 
       <h1>
         Turn requirements into a
-        <span>production-ready architecture.</span>
+        <span>
+          production-ready architecture.
+        </span>
       </h1>
 
       <p>
@@ -614,6 +809,7 @@ app.innerHTML = `
         estimate cost and compare architecture
         decisions before you build.
       </p>
+
     </header>
 
     <main class="workspace">
@@ -621,17 +817,28 @@ app.innerHTML = `
       <section class="card">
 
         <div class="heading">
+
           <div>
-            <span class="kicker">01 / REQUIREMENTS</span>
-            <h2>Describe your system</h2>
+
+            <span class="kicker">
+              01 / REQUIREMENTS
+            </span>
+
+            <h2>
+              Describe your system
+            </h2>
+
           </div>
 
           <span class="hint">
             Natural language supported
           </span>
+
         </div>
 
-        <label>What are you building?</label>
+        <label>
+          What are you building?
+        </label>
 
         <textarea
           id="requirements"
@@ -641,21 +848,31 @@ app.innerHTML = `
         <div class="inputs">
 
           <div>
-            <label>Expected users</label>
+
+            <label>
+              Expected users
+            </label>
+
             <input
               id="users"
               type="number"
               value="100000"
             />
+
           </div>
 
           <div>
-            <label>Peak requests / second</label>
+
+            <label>
+              Peak requests / second
+            </label>
+
             <input
               id="rps"
               type="number"
               value="1200"
             />
+
           </div>
 
           <button id="generate">
@@ -675,32 +892,48 @@ app.innerHTML = `
 
 document
   .querySelector("#generate")
-  ?.addEventListener("click", () => {
+  ?.addEventListener(
+    "click",
+    () => {
 
-    const requirement =
-      (document.querySelector("#requirements") as HTMLTextAreaElement)
-        .value;
+      const requirement =
+        (
+          document.querySelector(
+            "#requirements"
+          ) as HTMLTextAreaElement
+        ).value;
 
-    const users =
-      Number(
-        (document.querySelector("#users") as HTMLInputElement).value
-      ) || 1;
+      const users =
+        Number(
+          (
+            document.querySelector(
+              "#users"
+            ) as HTMLInputElement
+          ).value
+        ) || 1;
 
-    const rps =
-      Number(
-        (document.querySelector("#rps") as HTMLInputElement).value
-      ) || 1;
+      const rps =
+        Number(
+          (
+            document.querySelector(
+              "#rps"
+            ) as HTMLInputElement
+          ).value
+        ) || 1;
 
-    if (!requirement.trim()) {
-      alert("Please describe your system.");
-      return;
+      if (!requirement.trim()) {
+        alert(
+          "Please describe your system."
+        );
+        return;
+      }
+
+      render(
+        analyze(
+          requirement,
+          users,
+          rps
+        )
+      );
     }
-
-    render(
-      analyze(
-        requirement,
-        users,
-        rps
-      )
-    );
-  });
+  );
