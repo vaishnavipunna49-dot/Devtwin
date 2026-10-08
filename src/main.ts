@@ -340,6 +340,7 @@ function render(result: Result) {
     <section class="card">
 
       <div class="heading">
+
         <div>
           <span class="kicker">
             02 / ARCHITECTURE
@@ -356,6 +357,7 @@ function render(result: Result) {
         >
           Print / PDF
         </button>
+
       </div>
 
       <div class="metrics">
@@ -772,17 +774,10 @@ app.innerHTML = `
     <nav class="navbar">
 
       <div class="brand">
-
-        <span class="logo">
-          D
-        </span>
-
         DevTwin
-
         <span class="version">
           2.0
         </span>
-
       </div>
 
       <span class="status">
