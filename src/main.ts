@@ -1,890 +1,706 @@
-import "./style.css";
-
 interface Component {
   name: string;
   type: string;
   description: string;
+  load: number;
 }
 
-const app = document.querySelector<HTMLDivElement>("#app");
+interface Result {
+  components: Component[];
+  tier: string;
+  score: number;
+  bottlenecks: string[];
+  recommendations: string[];
+  cost: number;
+  users: number;
+  rps: number;
+}
 
-if (!app) {
-  throw new Error("App container not found");
+const app = document.querySelector<HTMLDivElement>("#app")!;
+
+const icons: Record<string, string> = {
+  Client: "🖥️",
+  "API Gateway": "🚪",
+  "Load Balancer": "⚖️",
+  Authentication: "🔐",
+  "Product Service": "📦",
+  "Order Service": "🛒",
+  "Restaurant Service": "🍽️",
+  "Delivery Service": "🚚",
+  "Payment Service": "💳",
+  "Notification Service": "🔔",
+  "Search Service": "🔎",
+  "Tracking Service": "📍",
+  "AI Service": "🤖",
+  Cache: "⚡",
+  Queue: "📨",
+  Database: "🗄️",
+  "Read Replica": "🗂️"
+};
+
+function escapeHTML(text: string): string {
+  return text.replace(/[&<>"']/g, c => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;"
+  }[c]!));
+}
+
+function getTier(rps: number): string {
+  if (rps < 100) return "Low";
+  if (rps < 1000) return "Medium";
+  if (rps < 5000) return "High";
+  if (rps < 10000) return "Very High";
+  return "Extreme";
+}
+
+function analyze(requirement: string, users: number, rps: number): Result {
+  const text = requirement.toLowerCase();
+
+  const components: Component[] = [
+    {
+      name: "Client",
+      type: "Frontend",
+      description: "Web or mobile client",
+      load: 30
+    },
+    {
+      name: "API Gateway",
+      type: "Edge",
+      description: "API routing and protection",
+      load: 65
+    },
+    {
+      name: "Cache",
+      type: "Performance",
+      description: "Fast access to frequently used data",
+      load: 45
+    },
+    {
+      name: "Database",
+      type: "Storage",
+      description: "Persistent application data",
+      load: 80
+    }
+  ];
+
+  const add = (
+    name: string,
+    type: string,
+    description: string,
+    load: number
+  ) => {
+    if (!components.some(c => c.name === name)) {
+      components.splice(2, 0, {
+        name,
+        type,
+        description,
+        load
+      });
+    }
+  };
+
+  if (rps >= 1000) {
+    add(
+      "Load Balancer",
+      "Traffic",
+      "Distributes requests across servers",
+      40
+    );
+  }
+
+  if (/login|auth|user|account|secure/.test(text)) {
+    add(
+      "Authentication",
+      "Security",
+      "Identity and access management",
+      45
+    );
+  }
+
+  if (/product|catalog|inventory|shop/.test(text)) {
+    add(
+      "Product Service",
+      "Domain",
+      "Product and inventory management",
+      55
+    );
+  }
+
+  if (/order|cart|checkout|purchase/.test(text)) {
+    add(
+      "Order Service",
+      "Domain",
+      "Orders and checkout",
+      70
+    );
+  }
+
+  if (/restaurant|food|menu/.test(text)) {
+    add(
+      "Restaurant Service",
+      "Domain",
+      "Restaurant and menu management",
+      55
+    );
+  }
+
+  if (/delivery|driver|deliver/.test(text)) {
+    add(
+      "Delivery Service",
+      "Domain",
+      "Delivery management",
+      65
+    );
+  }
+
+  if (/payment|pay|transaction/.test(text)) {
+    add(
+      "Payment Service",
+      "Domain",
+      "Payment processing",
+      70
+    );
+  }
+
+  if (/notification|email|sms|alert/.test(text)) {
+    add(
+      "Notification Service",
+      "Async",
+      "Notifications and alerts",
+      40
+    );
+  }
+
+  if (/search|find|discover/.test(text)) {
+    add(
+      "Search Service",
+      "Query",
+      "Search and filtering",
+      60
+    );
+  }
+
+  if (/tracking|location|gps|map/.test(text)) {
+    add(
+      "Tracking Service",
+      "Realtime",
+      "Location and tracking",
+      75
+    );
+  }
+
+  if (/ai|recommend|machine learning|ml/.test(text)) {
+    add(
+      "AI Service",
+      "AI",
+      "AI inference and recommendations",
+      70
+    );
+  }
+
+  if (rps >= 5000) {
+    add(
+      "Queue",
+      "Async",
+      "Handles traffic spikes and background work",
+      35
+    );
+  }
+
+  if (users >= 1000000 || rps >= 10000) {
+    add(
+      "Read Replica",
+      "Database",
+      "Scales database reads",
+      45
+    );
+  }
+
+  const bottlenecks: string[] = [];
+
+  if (rps >= 1000) {
+    bottlenecks.push(
+      "Database reads may become a bottleneck."
+    );
+  }
+
+  if (rps >= 5000) {
+    bottlenecks.push(
+      "Synchronous operations may increase latency."
+    );
+  }
+
+  if (text.includes("ai")) {
+    bottlenecks.push(
+      "AI inference can require significant compute."
+    );
+  }
+
+  if (text.includes("tracking")) {
+    bottlenecks.push(
+      "Realtime location writes can increase database load."
+    );
+  }
+
+  const recommendations = [
+    "Add monitoring, logs and distributed tracing.",
+    "Keep application servers stateless.",
+    "Perform load testing before production."
+  ];
+
+  if (rps >= 5000) {
+    recommendations.push(
+      "Use queues for expensive background operations."
+    );
+  }
+
+  if (users >= 1000000) {
+    recommendations.push(
+      "Plan database replicas and partitioning."
+    );
+  }
+
+  let score = 70;
+
+  if (rps >= 1000) score += 7;
+  if (rps >= 5000) score += 7;
+  if (components.some(c => c.name === "Load Balancer")) score += 5;
+  if (components.some(c => c.name === "Queue")) score += 4;
+  if (components.some(c => c.name === "Read Replica")) score += 3;
+
+  score -= bottlenecks.length * 3;
+  score = Math.max(0, Math.min(100, score));
+
+  const cost = Math.round(
+    35 +
+    rps * 0.018 +
+    users / 25000 +
+    (rps > 1000 ? 35 : 10) +
+    (rps > 5000 ? 28 : 0) +
+    (users >= 1000000 ? 70 : 0)
+  );
+
+  return {
+    components,
+    tier: getTier(rps),
+    score,
+    bottlenecks,
+    recommendations,
+    cost,
+    users,
+    rps
+  };
+}
+
+function render(result: Result) {
+  const results = document.querySelector("#results")!;
+
+  results.innerHTML = `
+    <section class="card">
+      <div class="heading">
+        <div>
+          <span class="kicker">02 / ARCHITECTURE</span>
+          <h2>Recommended System Design</h2>
+        </div>
+
+        <button id="printBtn" class="small-btn">
+          Print / PDF
+        </button>
+      </div>
+
+      <div class="metrics">
+        <div>
+          <span>Architecture Score</span>
+          <strong>${result.score}/100</strong>
+        </div>
+
+        <div>
+          <span>Traffic</span>
+          <strong>${result.tier}</strong>
+        </div>
+
+        <div>
+          <span>Peak RPS</span>
+          <strong>${result.rps.toLocaleString()}</strong>
+        </div>
+
+        <div>
+          <span>Users</span>
+          <strong>${result.users.toLocaleString()}</strong>
+        </div>
+
+        <div>
+          <span>Estimated Cost</span>
+          <strong>$${result.cost}/mo</strong>
+        </div>
+      </div>
+
+      <div class="architecture">
+        ${result.components.map((c, i) => `
+          <div class="node-wrap">
+
+            <div class="node">
+              <div class="node-icon">
+                ${icons[c.name] || "◈"}
+              </div>
+
+              <strong>${escapeHTML(c.name)}</strong>
+
+              <small>${escapeHTML(c.type)}</small>
+
+              <div class="bar">
+                <span style="width:${c.load}%"></span>
+              </div>
+
+              <em>${c.load}% load</em>
+            </div>
+
+            ${
+              i < result.components.length - 1
+                ? `<div class="arrow">→</div>`
+                : ""
+            }
+
+          </div>
+        `).join("")}
+      </div>
+    </section>
+
+    <section class="analysis-grid">
+
+      <div class="analysis">
+        <h3>📈 Scalability</h3>
+        <p>
+          ${
+            result.rps >= 5000
+              ? "Use horizontal scaling, caching and asynchronous queues."
+              : result.rps >= 1000
+              ? "Use horizontal application scaling behind a load balancer."
+              : "Vertical scaling is sufficient initially."
+          }
+        </p>
+      </div>
+
+      <div class="analysis">
+        <h3>🗃️ Storage</h3>
+        <p>
+          Managed relational database with caching is recommended.
+        </p>
+      </div>
+
+      <div class="analysis">
+        <h3>🏗️ Architecture</h3>
+        <p>
+          ${
+            result.components.length >= 8
+              ? "Service-oriented architecture"
+              : "Modular scalable architecture"
+          }
+        </p>
+      </div>
+
+      <div class="analysis">
+        <h3>⚠️ Bottlenecks</h3>
+
+        ${
+          result.bottlenecks.length
+            ? `<ul>
+                ${result.bottlenecks
+                  .map(b => `<li>${escapeHTML(b)}</li>`)
+                  .join("")}
+              </ul>`
+            : "<p>No major bottlenecks detected.</p>"
+        }
+      </div>
+
+      <div class="analysis">
+        <h3>🧪 Testing</h3>
+        <ul>
+          <li>Unit testing</li>
+          <li>API integration testing</li>
+          <li>Load testing</li>
+          <li>Failure testing</li>
+        </ul>
+      </div>
+
+      <div class="analysis">
+        <h3>🛡️ Risks</h3>
+        <ul>
+          <li>Database growth</li>
+          <li>Third-party failures</li>
+          <li>Security vulnerabilities</li>
+        </ul>
+      </div>
+
+    </section>
+
+    <section class="card">
+      <div class="heading">
+        <div>
+          <span class="kicker">03 / LIVE SIMULATION</span>
+          <h2>Traffic Simulator</h2>
+        </div>
+
+        <button id="simulateBtn" class="small-btn">
+          Start Simulation
+        </button>
+      </div>
+
+      <div class="live-grid">
+        <div>
+          <span>Current RPS</span>
+          <strong id="liveRps">${result.rps}</strong>
+        </div>
+
+        <div>
+          <span>Latency</span>
+          <strong id="latency">-- ms</strong>
+        </div>
+
+        <div>
+          <span>Health</span>
+          <strong id="health">Ready</strong>
+        </div>
+      </div>
+
+      <div id="chart" class="chart"></div>
+    </section>
+
+    <section class="card">
+      <span class="kicker">04 / COMPARISON</span>
+      <h2>Architecture Comparison</h2>
+
+      <div class="compare">
+
+        <div>
+          <h3>Simple Baseline</h3>
+          <strong class="big-score">58/100</strong>
+
+          <ul>
+            <li>Lower initial cost</li>
+            <li>Easy deployment</li>
+            <li>Limited scalability</li>
+            <li>More single points of failure</li>
+          </ul>
+        </div>
+
+        <div class="recommended">
+          <b>RECOMMENDED</b>
+
+          <h3>DevTwin Architecture</h3>
+          <strong class="big-score">
+            ${result.score}/100
+          </strong>
+
+          <ul>
+            <li>Traffic-aware scaling</li>
+            <li>Better failure isolation</li>
+            <li>Async processing</li>
+            <li>Production-ready growth path</li>
+          </ul>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="card">
+      <span class="kicker">05 / RECOMMENDATIONS</span>
+      <h2>Engineering Recommendations</h2>
+
+      <div class="recommendations">
+        ${result.recommendations.map((r, i) => `
+          <div>
+            <b>${String(i + 1).padStart(2, "0")}</b>
+            <span>${escapeHTML(r)}</span>
+          </div>
+        `).join("")}
+      </div>
+    </section>
+  `;
+
+  document
+    .querySelector("#printBtn")
+    ?.addEventListener("click", () => window.print());
+
+  document
+    .querySelector("#simulateBtn")
+    ?.addEventListener("click", () => simulate(result));
+}
+
+function simulate(result: Result) {
+  const rps = document.querySelector("#liveRps")!;
+  const latency = document.querySelector("#latency")!;
+  const health = document.querySelector("#health")!;
+  const chart = document.querySelector("#chart")!;
+
+  let count = 0;
+  const points: number[] = [];
+
+  const timer = setInterval(() => {
+    count++;
+
+    const current = Math.round(
+      result.rps *
+      (0.75 + Math.random() * 0.45)
+    );
+
+    const delay = Math.round(
+      50 + Math.random() * 120
+    );
+
+    points.push(current);
+
+    if (points.length > 30) {
+      points.shift();
+    }
+
+    rps.textContent = current.toLocaleString();
+    latency.textContent = `${delay} ms`;
+
+    health.textContent =
+      current > result.rps * 1.05
+        ? "Degraded"
+        : "Healthy";
+
+    chart.innerHTML = points
+      .map(p => `
+        <span
+          style="
+            height:${Math.min(
+              100,
+              (p / result.rps) * 100
+            )}%
+          "
+        ></span>
+      `)
+      .join("");
+
+    if (count >= 20) {
+      clearInterval(timer);
+    }
+  }, 400);
 }
 
 app.innerHTML = `
-  <header class="topbar">
-    <div class="logo">DevTwin</div>
-    <div class="subtitle">AI SOFTWARE ARCHITECTURE SIMULATOR</div>
-  </header>
+  <div class="app">
 
-  <main class="container">
+    <nav class="navbar">
+      <div class="brand">
+        <span class="logo">D</span>
+        DevTwin
+        <span class="version">2.0</span>
+      </div>
 
-    <section class="hero">
-      <h1>AI System Architecture Simulator</h1>
+      <span class="status">
+        ● Architecture Simulator
+      </span>
+    </nav>
+
+    <header class="hero">
+      <span class="kicker">
+        AI-INSPIRED SYSTEM DESIGN LAB
+      </span>
+
+      <h1>
+        Turn requirements into a
+        <span>production-ready architecture.</span>
+      </h1>
+
       <p>
-        Describe your software system and DevTwin will generate
-        a scalable architecture with analysis, risks and recommendations.
+        Model traffic, detect bottlenecks,
+        estimate cost and compare architecture
+        decisions before you build.
       </p>
-    </section>
+    </header>
 
-    <section class="input-card">
+    <main class="workspace">
 
-      <label for="requirement">
-        Application Requirement
-      </label>
+      <section class="card">
 
-      <textarea
-        id="requirement"
-        placeholder="Example: Build a food delivery application where users can register, browse restaurants, search food, place orders, make payments and track delivery."
-      ></textarea>
+        <div class="heading">
+          <div>
+            <span class="kicker">01 / REQUIREMENTS</span>
+            <h2>Describe your system</h2>
+          </div>
 
-      <div class="input-row">
-
-        <div class="input-group">
-          <label for="users">Expected Users</label>
-          <input
-            id="users"
-            type="number"
-            value="100000"
-            min="1"
-          />
+          <span class="hint">
+            Natural language supported
+          </span>
         </div>
 
-        <div class="input-group">
-          <label for="rps">Requests / Second</label>
-          <input
-            id="rps"
-            type="number"
-            value="1000"
-            min="1"
-          />
+        <label>What are you building?</label>
+
+        <textarea
+          id="requirements"
+          placeholder="Example: A food delivery platform with login, restaurant search, orders, payments and delivery tracking."
+        >A food delivery platform with restaurant search, user login, orders, payments, delivery tracking and notifications.</textarea>
+
+        <div class="inputs">
+
+          <div>
+            <label>Expected users</label>
+            <input
+              id="users"
+              type="number"
+              value="100000"
+            />
+          </div>
+
+          <div>
+            <label>Peak requests / second</label>
+            <input
+              id="rps"
+              type="number"
+              value="1200"
+            />
+          </div>
+
+          <button id="generate">
+            Generate Architecture →
+          </button>
+
         </div>
 
-      </div>
+      </section>
 
-      <button id="analyzeBtn">
-        ⚡ Analyze & Generate Architecture
-      </button>
+      <div id="results"></div>
 
-    </section>
+    </main>
 
-    <section id="architectureSection" class="result-section hidden">
-
-      <div class="section-title">
-        <span>🏗️</span>
-        <h2>Generated Architecture</h2>
-      </div>
-
-      <div id="architecture"></div>
-
-    </section>
-
-    <section id="analysisSection" class="result-section hidden">
-
-      <div class="section-title">
-        <span>📊</span>
-        <h2>System Analysis</h2>
-      </div>
-
-      <div id="analysis"></div>
-
-    </section>
-
-  </main>
+  </div>
 `;
 
-const requirementInput =
-  document.querySelector<HTMLTextAreaElement>("#requirement");
-
-const usersInput =
-  document.querySelector<HTMLInputElement>("#users");
-
-const rpsInput =
-  document.querySelector<HTMLInputElement>("#rps");
-
-const analyzeButton =
-  document.querySelector<HTMLButtonElement>("#analyzeBtn");
-
-const architectureContainer =
-  document.querySelector<HTMLDivElement>("#architecture");
-
-const analysisContainer =
-  document.querySelector<HTMLDivElement>("#analysis");
-
-const architectureSection =
-  document.querySelector<HTMLElement>("#architectureSection");
-
-const analysisSection =
-  document.querySelector<HTMLElement>("#analysisSection");
-
-
-/* ================================
-   MAIN ANALYSIS
-================================ */
-
-function analyzeRequirement(
-  requirement: string,
-  users: number,
-  rps: number
-): Component[] {
-
-  const text = requirement.toLowerCase();
-
-  const components: Component[] = [];
-
-  function add(
-    name: string,
-    type: string,
-    description: string
-  ) {
-    components.push({
-      name,
-      type,
-      description
-    });
-  }
-
-  // Always include API Gateway
-  add(
-    "API Gateway",
-    "gateway",
-    "Central entry point for client requests."
-  );
-
-  // Authentication
-  if (
-    text.includes("login") ||
-    text.includes("register") ||
-    text.includes("user") ||
-    text.includes("account") ||
-    text.includes("authentication") ||
-    text.includes("auth")
-  ) {
-    add(
-      "Authentication Service",
-      "auth",
-      "Handles user authentication, registration and authorization."
-    );
-  }
-
-  // E-commerce
-  if (
-    text.includes("shop") ||
-    text.includes("e-commerce") ||
-    text.includes("ecommerce") ||
-    text.includes("product") ||
-    text.includes("cart") ||
-    text.includes("order")
-  ) {
-    add(
-      "Product Service",
-      "product",
-      "Manages products and product information."
-    );
-
-    add(
-      "Order Service",
-      "order",
-      "Processes and manages customer orders."
-    );
-  }
-
-  // Food delivery
-  if (
-    text.includes("food") ||
-    text.includes("restaurant") ||
-    text.includes("delivery")
-  ) {
-    add(
-      "Restaurant Service",
-      "restaurant",
-      "Manages restaurants, menus and food information."
-    );
-
-    add(
-      "Delivery Service",
-      "delivery",
-      "Handles delivery assignment and delivery operations."
-    );
-  }
-
-  // Payment
-  if (
-    text.includes("payment") ||
-    text.includes("pay") ||
-    text.includes("transaction")
-  ) {
-    add(
-      "Payment Service",
-      "payment",
-      "Processes secure payment transactions."
-    );
-  }
-
-  // Messaging
-  if (
-    text.includes("chat") ||
-    text.includes("message") ||
-    text.includes("messaging")
-  ) {
-    add(
-      "Messaging Service",
-      "message",
-      "Handles real-time communication between users."
-    );
-  }
-
-  // Notifications
-  if (
-    text.includes("notification") ||
-    text.includes("alert") ||
-    text.includes("email") ||
-    text.includes("sms")
-  ) {
-    add(
-      "Notification Service",
-      "notification",
-      "Sends system notifications and alerts."
-    );
-  }
-
-  // Search
-  if (
-    text.includes("search") ||
-    text.includes("filter")
-  ) {
-    add(
-      "Search Service",
-      "search",
-      "Provides fast search and filtering functionality."
-    );
-  }
-
-  // Tracking
-  if (
-    text.includes("track") ||
-    text.includes("tracking") ||
-    text.includes("location") ||
-    text.includes("map")
-  ) {
-    add(
-      "Tracking Service",
-      "tracking",
-      "Handles location and real-time tracking."
-    );
-  }
-
-  // AI
-  if (
-    text.includes("ai") ||
-    text.includes("artificial intelligence") ||
-    text.includes("machine learning") ||
-    text.includes("prediction") ||
-    text.includes("recommendation")
-  ) {
-    add(
-      "AI Engine",
-      "ai",
-      "Provides intelligent predictions and recommendations."
-    );
-  }
-
-  // Cache
-  add(
-    "Cache",
-    "cache",
-    "Stores frequently accessed data for faster responses."
-  );
-
-  // Database
-  add(
-    "Database",
-    "database",
-    "Stores application data securely."
-  );
-
-  return removeDuplicates(components);
-}
-
-
-/* ================================
-   GENERATE ARCHITECTURE
-================================ */
-
-function renderArchitecture(
-  components: Component[],
-  requirement: string
-) {
-
-  if (!architectureContainer) return;
-
-  let html = "";
-
-  html += `
-    <div class="requirement-display">
-      <strong>Analyzed Requirement:</strong>
-      <p>${escapeHtml(requirement)}</p>
-    </div>
-  `;
-
-  html += `
-    <div class="architecture-flow">
-  `;
-
-  components.forEach((component, index) => {
-
-    html += `
-      <div class="architecture-node">
-
-        <div class="node-icon">
-          ${getIcon(component.type)}
-        </div>
-
-        <div class="node-name">
-          ${escapeHtml(component.name)}
-        </div>
-
-        <div class="node-description">
-          ${escapeHtml(component.description)}
-        </div>
-
-      </div>
-    `;
-
-    if (index < components.length - 1) {
-      html += `
-        <div class="architecture-arrow">
-          →
-        </div>
-      `;
-    }
-
-  });
-
-  html += `
-    </div>
-  `;
-
-  architectureContainer.innerHTML = html;
-}
-
-
-/* ================================
-   ANALYSIS
-================================ */
-
-function renderAnalysis(
-  components: Component[],
-  requirement: string,
-  users: number,
-  rps: number
-) {
-
-  if (!analysisContainer) return;
-
-  const scalability = getScalability(rps);
-
-  const storage = getStorageRecommendation(users);
-
-  const risks = getRisks(
-    components,
-    users,
-    rps,
-    requirement
-  );
-
-  const testing = getTestingRecommendations(
-    components
-  );
-
-  const architectureType =
-    getArchitectureType(components);
-
-  analysisContainer.innerHTML = `
-
-    <div class="analysis-grid">
-
-      <div class="analysis-card">
-        <h3>🧠 System Understanding</h3>
-        <p>
-          DevTwin analyzed the application requirement and
-          identified ${components.length} major architectural components.
-        </p>
-      </div>
-
-      <div class="analysis-card">
-        <h3>📈 Scalability</h3>
-        <p>${scalability}</p>
-      </div>
-
-      <div class="analysis-card">
-        <h3>🚦 Traffic Analysis</h3>
-        <p>
-          Expected traffic:
-          <strong>${rps.toLocaleString()}</strong>
-          requests/second.
-        </p>
-      </div>
-
-      <div class="analysis-card">
-        <h3>👥 User Scale</h3>
-        <p>
-          Expected users:
-          <strong>${users.toLocaleString()}</strong>.
-        </p>
-      </div>
-
-      <div class="analysis-card">
-        <h3>⚠️ Potential Risks</h3>
-        <ul>
-          ${risks.map(risk => `<li>${risk}</li>`).join("")}
-        </ul>
-      </div>
-
-      <div class="analysis-card">
-        <h3>🧪 Testing Recommendations</h3>
-        <ul>
-          ${testing.map(test => `<li>${test}</li>`).join("")}
-        </ul>
-      </div>
-
-      <div class="analysis-card">
-        <h3>💾 Data Storage</h3>
-        <p>${storage}</p>
-      </div>
-
-      <div class="analysis-card">
-        <h3>🏗️ Architecture Type</h3>
-        <p>
-          <strong>${architectureType}</strong>
-        </p>
-      </div>
-
-      <div class="analysis-card recommendation-card">
-        <h3>💡 Architecture Recommendation</h3>
-        <p>
-          ${getArchitectureRecommendation(
-            components,
-            users,
-            rps
-          )}
-        </p>
-      </div>
-
-    </div>
-
-  `;
-}
-
-
-/* ================================
-   SCALABILITY
-================================ */
-
-function getScalability(rps: number): string {
-
-  if (rps >= 5000) {
-    return `
-      Very high traffic is expected.
-      Use horizontal scaling, load balancing,
-      distributed caching and multiple application servers.
-    `;
-  }
-
-  if (rps >= 1000) {
-    return `
-      Moderate-to-high traffic is expected.
-      Use caching, multiple application servers
-      and load balancing.
-    `;
-  }
-
-  if (rps >= 500) {
-    return `
-      Medium traffic is expected.
-      A scalable application architecture with
-      caching should be sufficient.
-    `;
-  }
-
-  return `
-    Basic scalable architecture should be sufficient
-    for the expected traffic.
-  `;
-}
-
-
-/* ================================
-   STORAGE
-================================ */
-
-function getStorageRecommendation(
-  users: number
-): string {
-
-  if (users >= 1000000) {
-    return `
-      Very large user scale.
-      Consider database sharding, replication,
-      indexing and distributed storage.
-    `;
-  }
-
-  if (users >= 100000) {
-    return `
-      Large user scale.
-      Use database indexing, backups,
-      replication and optimized queries.
-    `;
-  }
-
-  return `
-    Standard relational or NoSQL database
-    architecture should be sufficient.
-  `;
-}
-
-
-/* ================================
-   ARCHITECTURE TYPE
-================================ */
-
-function getArchitectureType(
-  components: Component[]
-): string {
-
-  if (
-    components.some(
-      component => component.type === "ai"
-    )
-  ) {
-    return "AI-enabled distributed application";
-  }
-
-  if (components.length >= 7) {
-    return "Modular distributed application";
-  }
-
-  return "Scalable web application";
-}
-
-
-/* ================================
-   RISKS
-================================ */
-
-function getRisks(
-  components: Component[],
-  users: number,
-  rps: number,
-  requirement: string
-): string[] {
-
-  const risks: string[] = [];
-
-  const text = requirement.toLowerCase();
-
-  if (rps >= 5000) {
-    risks.push(
-      "High traffic may create performance bottlenecks."
-    );
-  }
-
-  if (users >= 100000) {
-    risks.push(
-      "Database scalability should be carefully planned."
-    );
-  }
-
-  if (
-    text.includes("payment") ||
-    text.includes("transaction")
-  ) {
-    risks.push(
-      "Payment security and transaction reliability are critical."
-    );
-  }
-
-  if (
-    text.includes("login") ||
-    text.includes("account") ||
-    text.includes("authentication")
-  ) {
-    risks.push(
-      "Authentication and authorization must be secured."
-    );
-  }
-
-  if (
-    text.includes("location") ||
-    text.includes("tracking")
-  ) {
-    risks.push(
-      "Real-time tracking may require efficient data processing."
-    );
-  }
-
-  if (risks.length === 0) {
-    risks.push(
-      "No major architectural risks detected from the provided requirement."
-    );
-  }
-
-  return risks;
-}
-
-
-/* ================================
-   TESTING
-================================ */
-
-function getTestingRecommendations(
-  components: Component[]
-): string[] {
-
-  const recommendations: string[] = [
-    "API testing",
-    "Integration testing",
-    "Load and performance testing"
-  ];
-
-  if (
-    components.some(
-      component => component.type === "payment"
-    )
-  ) {
-    recommendations.push(
-      "Payment transaction testing"
-    );
-  }
-
-  if (
-    components.some(
-      component => component.type === "ai"
-    )
-  ) {
-    recommendations.push(
-      "AI prediction validation"
-    );
-  }
-
-  if (
-    components.some(
-      component => component.type === "notification"
-    )
-  ) {
-    recommendations.push(
-      "Notification delivery testing"
-    );
-  }
-
-  return recommendations;
-}
-
-
-/* ================================
-   RECOMMENDATION
-================================ */
-
-function getArchitectureRecommendation(
-  components: Component[],
-  users: number,
-  rps: number
-): string {
-
-  const recommendations: string[] = [];
-
-  if (
-    users >= 100000 ||
-    rps >= 1000
-  ) {
-    recommendations.push(
-      "Use load balancing and horizontal scaling."
-    );
-
-    recommendations.push(
-      "Use caching to reduce database load."
-    );
-
-    recommendations.push(
-      "Consider database replication."
-    );
-  }
-
-  if (
-    components.some(
-      component => component.type === "payment"
-    )
-  ) {
-    recommendations.push(
-      "Apply strong payment security and transaction validation."
-    );
-  }
-
-  if (
-    components.some(
-      component => component.type === "ai"
-    )
-  ) {
-    recommendations.push(
-      "Monitor AI model performance and prediction accuracy."
-    );
-  }
-
-  if (recommendations.length === 0) {
-    recommendations.push(
-      "Use a modular architecture with scalable services and proper monitoring."
-    );
-  }
-
-  return recommendations.join(" ");
-}
-
-
-/* ================================
-   ICONS
-================================ */
-
-function getIcon(type: string): string {
-
-  const icons: Record<string, string> = {
-
-    gateway: "🌐",
-
-    auth: "🔐",
-
-    product: "📦",
-
-    order: "🛒",
-
-    restaurant: "🍴",
-
-    delivery: "🚚",
-
-    payment: "💳",
-
-    message: "💬",
-
-    notification: "🔔",
-
-    search: "🔎",
-
-    tracking: "📍",
-
-    ai: "🤖",
-
-    cache: "⚡",
-
-    database: "🗄️"
-  };
-
-  return icons[type] || "⚙️";
-}
-
-
-/* ================================
-   REMOVE DUPLICATES
-================================ */
-
-function removeDuplicates(
-  components: Component[]
-): Component[] {
-
-  const seen = new Set<string>();
-
-  return components.filter(component => {
-
-    if (seen.has(component.name)) {
-      return false;
-    }
-
-    seen.add(component.name);
-
-    return true;
-  });
-}
-
-
-/* ================================
-   SECURITY
-================================ */
-
-function escapeHtml(value: string): string {
-
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
-
-/* ================================
-   BUTTON
-================================ */
-
-analyzeButton?.addEventListener(
-  "click",
-  () => {
+document
+  .querySelector("#generate")
+  ?.addEventListener("click", () => {
 
     const requirement =
-      requirementInput?.value.trim() || "";
+      (document.querySelector("#requirements") as HTMLTextAreaElement)
+        .value;
 
     const users =
-      Number(usersInput?.value || 0);
+      Number(
+        (document.querySelector("#users") as HTMLInputElement).value
+      ) || 1;
 
     const rps =
-      Number(rpsInput?.value || 0);
+      Number(
+        (document.querySelector("#rps") as HTMLInputElement).value
+      ) || 1;
 
-    if (!requirement) {
-
-      alert(
-        "Please enter an application requirement."
-      );
-
+    if (!requirement.trim()) {
+      alert("Please describe your system.");
       return;
     }
 
-    if (users <= 0 || rps <= 0) {
-
-      alert(
-        "Please enter valid users and requests/second values."
-      );
-
-      return;
-    }
-
-    const components =
-      analyzeRequirement(
+    render(
+      analyze(
         requirement,
         users,
         rps
-      );
-
-    renderArchitecture(
-      components,
-      requirement
+      )
     );
-
-    renderAnalysis(
-      components,
-      requirement,
-      users,
-      rps
-    );
-
-    architectureSection?.classList.remove(
-      "hidden"
-    );
-
-    analysisSection?.classList.remove(
-      "hidden"
-    );
-
-    architectureSection?.scrollIntoView({
-      behavior: "smooth"
-    });
-  }
-);
+  });
