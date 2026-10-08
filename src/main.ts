@@ -1,10 +1,10 @@
 import "./style.css";
 
-type Component = {
+interface Component {
   name: string;
   type: string;
   description: string;
-};
+}
 
 const app = document.querySelector<HTMLDivElement>("#app");
 
@@ -13,300 +13,144 @@ if (!app) {
 }
 
 app.innerHTML = `
-  <div class="app">
+  <header class="topbar">
+    <div class="logo">DevTwin</div>
+    <div class="subtitle">AI SOFTWARE ARCHITECTURE SIMULATOR</div>
+  </header>
 
-    <header class="navbar">
-      <div class="logo">
-        <span class="logo-icon">D</span>
-        <span>DevTwin</span>
-      </div>
+  <main class="container">
 
-      <div class="nav-right">
-        <span class="status-dot"></span>
-        AI System Architecture Simulator
-      </div>
-    </header>
-
-    <main class="container">
-
-      <section class="hero">
-        <p class="eyebrow">AI SOFTWARE ARCHITECTURE SIMULATOR</p>
-
-        <h1>
-          Design your system.
-          <br />
-          <span>Understand its architecture.</span>
-        </h1>
-
-        <p class="hero-text">
-          Describe your application requirements and DevTwin
-          will intelligently suggest a scalable system architecture.
-        </p>
-      </section>
-
-      <section class="workspace">
-
-        <div class="card requirements-card">
-
-          <div class="card-title">
-            <div>
-              <h2>System Requirements</h2>
-              <p>Tell DevTwin what you want to build.</p>
-            </div>
-
-            <span class="step">01</span>
-          </div>
-
-          <label for="requirement">
-            Application Requirement
-          </label>
-
-          <textarea
-            id="requirement"
-            placeholder="Example: Build a food delivery application where users can browse restaurants, order food, make payments and track delivery."
-          ></textarea>
-
-          <div class="input-grid">
-
-            <div>
-              <label for="users">
-                Expected Users
-              </label>
-
-              <input
-                id="users"
-                type="number"
-                value="100000"
-                placeholder="100000"
-              />
-            </div>
-
-            <div>
-              <label for="rps">
-                Requests / Second
-              </label>
-
-              <input
-                id="rps"
-                type="number"
-                value="1000"
-                placeholder="1000"
-              />
-            </div>
-
-          </div>
-
-          <button
-            id="generateBtn"
-            class="generate-btn"
-          >
-            <span>⚡</span>
-            Analyze & Generate Architecture
-          </button>
-
-        </div>
-
-        <div class="card architecture-card">
-
-          <div class="card-title">
-            <div>
-              <h2>Architecture</h2>
-              <p>Intelligently generated system components</p>
-            </div>
-
-            <span class="step">02</span>
-          </div>
-
-          <div
-            id="architecture"
-            class="architecture"
-          >
-            <div class="empty-state">
-
-              <div class="empty-icon">
-                ◇
-              </div>
-
-              <h3>
-                Your architecture will appear here
-              </h3>
-
-              <p>
-                Enter your requirements and click
-                <strong>Analyze & Generate Architecture</strong>.
-              </p>
-
-            </div>
-          </div>
-
-        </div>
-
-      </section>
-
-      <section
-        id="analysisSection"
-        class="card analysis-card hidden"
-      >
-
-        <div class="card-title">
-
-          <div>
-            <h2>AI Architecture Analysis</h2>
-
-            <p>
-              DevTwin's intelligent system design recommendations
-            </p>
-          </div>
-
-          <span class="step">03</span>
-
-        </div>
-
-        <div
-          id="analysis"
-          class="analysis-grid"
-        ></div>
-
-      </section>
-
-    </main>
-
-    <footer>
+    <section class="hero">
+      <h1>AI System Architecture Simulator</h1>
       <p>
-        DevTwin • AI Software Architecture Simulator
+        Describe your software system and DevTwin will generate
+        a scalable architecture with analysis, risks and recommendations.
       </p>
-    </footer>
+    </section>
 
-  </div>
+    <section class="input-card">
+
+      <label for="requirement">
+        Application Requirement
+      </label>
+
+      <textarea
+        id="requirement"
+        placeholder="Example: Build a food delivery application where users can register, browse restaurants, search food, place orders, make payments and track delivery."
+      ></textarea>
+
+      <div class="input-row">
+
+        <div class="input-group">
+          <label for="users">Expected Users</label>
+          <input
+            id="users"
+            type="number"
+            value="100000"
+            min="1"
+          />
+        </div>
+
+        <div class="input-group">
+          <label for="rps">Requests / Second</label>
+          <input
+            id="rps"
+            type="number"
+            value="1000"
+            min="1"
+          />
+        </div>
+
+      </div>
+
+      <button id="analyzeBtn">
+        ⚡ Analyze & Generate Architecture
+      </button>
+
+    </section>
+
+    <section id="architectureSection" class="result-section hidden">
+
+      <div class="section-title">
+        <span>🏗️</span>
+        <h2>Generated Architecture</h2>
+      </div>
+
+      <div id="architecture"></div>
+
+    </section>
+
+    <section id="analysisSection" class="result-section hidden">
+
+      <div class="section-title">
+        <span>📊</span>
+        <h2>System Analysis</h2>
+      </div>
+
+      <div id="analysis"></div>
+
+    </section>
+
+  </main>
 `;
 
-const generateBtn =
-  document.querySelector<HTMLButtonElement>(
-    "#generateBtn"
-  );
-
 const requirementInput =
-  document.querySelector<HTMLTextAreaElement>(
-    "#requirement"
-  );
+  document.querySelector<HTMLTextAreaElement>("#requirement");
 
 const usersInput =
-  document.querySelector<HTMLInputElement>(
-    "#users"
-  );
+  document.querySelector<HTMLInputElement>("#users");
 
 const rpsInput =
-  document.querySelector<HTMLInputElement>(
-    "#rps"
-  );
+  document.querySelector<HTMLInputElement>("#rps");
 
-const architecture =
-  document.querySelector<HTMLDivElement>(
-    "#architecture"
-  );
+const analyzeButton =
+  document.querySelector<HTMLButtonElement>("#analyzeBtn");
+
+const architectureContainer =
+  document.querySelector<HTMLDivElement>("#architecture");
+
+const analysisContainer =
+  document.querySelector<HTMLDivElement>("#analysis");
+
+const architectureSection =
+  document.querySelector<HTMLElement>("#architectureSection");
 
 const analysisSection =
-  document.querySelector<HTMLElement>(
-    "#analysisSection"
-  );
-
-const analysis =
-  document.querySelector<HTMLDivElement>(
-    "#analysis"
-  );
-
-if (
-  !generateBtn ||
-  !requirementInput ||
-  !usersInput ||
-  !rpsInput ||
-  !architecture ||
-  !analysisSection ||
-  !analysis
-) {
-  throw new Error("Required elements not found");
-}
-
-generateBtn.addEventListener(
-  "click",
-  generateArchitecture
-);
+  document.querySelector<HTMLElement>("#analysisSection");
 
 
-/* ------------------------------------------
-   MAIN ARCHITECTURE GENERATOR
------------------------------------------- */
-
-function generateArchitecture(): void {
-
-  const requirement =
-    requirementInput.value.trim();
-
-  const users =
-    Number(usersInput.value) || 0;
-
-  const rps =
-    Number(rpsInput.value) || 0;
-
-  if (!requirement) {
-
-    alert(
-      "Please enter your application requirement first."
-    );
-
-    requirementInput.focus();
-
-    return;
-  }
-
-  const components =
-    analyzeRequirement(requirement);
-
-  renderArchitecture(
-    components,
-    requirement
-  );
-
-  renderAnalysis(
-    requirement,
-    components,
-    users,
-    rps
-  );
-
-  analysisSection.classList.remove(
-    "hidden"
-  );
-
-  analysisSection.scrollIntoView({
-    behavior: "smooth",
-    block: "start"
-  });
-}
-
-
-/* ------------------------------------------
-   REQUIREMENT ANALYZER
------------------------------------------- */
+/* ================================
+   MAIN ANALYSIS
+================================ */
 
 function analyzeRequirement(
-  requirement: string
+  requirement: string,
+  users: number,
+  rps: number
 ): Component[] {
 
-  const text =
-    requirement.toLowerCase();
+  const text = requirement.toLowerCase();
 
   const components: Component[] = [];
 
+  function add(
+    name: string,
+    type: string,
+    description: string
+  ) {
+    components.push({
+      name,
+      type,
+      description
+    });
+  }
 
-  // Always required
-  components.push({
-    name: "API Gateway",
-    type: "gateway",
-    description:
-      "Receives and routes client requests"
-  });
-
+  // Always include API Gateway
+  add(
+    "API Gateway",
+    "gateway",
+    "Central entry point for client requests."
+  );
 
   // Authentication
   if (
@@ -317,18 +161,14 @@ function analyzeRequirement(
     text.includes("authentication") ||
     text.includes("auth")
   ) {
-
-    components.push({
-      name: "Authentication Service",
-      type: "auth",
-      description:
-        "Manages users, login and authentication"
-    });
-
+    add(
+      "Authentication Service",
+      "auth",
+      "Handles user authentication, registration and authorization."
+    );
   }
 
-
-  // E-commerce / shopping
+  // E-commerce
   if (
     text.includes("shop") ||
     text.includes("e-commerce") ||
@@ -337,23 +177,18 @@ function analyzeRequirement(
     text.includes("cart") ||
     text.includes("order")
   ) {
+    add(
+      "Product Service",
+      "product",
+      "Manages products and product information."
+    );
 
-    components.push({
-      name: "Product Service",
-      type: "server",
-      description:
-        "Manages products and catalog operations"
-    });
-
-    components.push({
-      name: "Order Service",
-      type: "server",
-      description:
-        "Processes carts and customer orders"
-    });
-
+    add(
+      "Order Service",
+      "order",
+      "Processes and manages customer orders."
+    );
   }
-
 
   // Food delivery
   if (
@@ -361,23 +196,18 @@ function analyzeRequirement(
     text.includes("restaurant") ||
     text.includes("delivery")
   ) {
+    add(
+      "Restaurant Service",
+      "restaurant",
+      "Manages restaurants, menus and food information."
+    );
 
-    components.push({
-      name: "Restaurant Service",
-      type: "server",
-      description:
-        "Manages restaurants, menus and availability"
-    });
-
-    components.push({
-      name: "Delivery Service",
-      type: "server",
-      description:
-        "Manages delivery and order tracking"
-    });
-
+    add(
+      "Delivery Service",
+      "delivery",
+      "Handles delivery assignment and delivery operations."
+    );
   }
-
 
   // Payment
   if (
@@ -385,84 +215,65 @@ function analyzeRequirement(
     text.includes("pay") ||
     text.includes("transaction")
   ) {
-
-    components.push({
-      name: "Payment Service",
-      type: "payment",
-      description:
-        "Handles secure payment transactions"
-    });
-
+    add(
+      "Payment Service",
+      "payment",
+      "Processes secure payment transactions."
+    );
   }
 
-
-  // Chat / messaging
+  // Messaging
   if (
     text.includes("chat") ||
     text.includes("message") ||
     text.includes("messaging")
   ) {
-
-    components.push({
-      name: "Messaging Service",
-      type: "server",
-      description:
-        "Handles real-time communication"
-    });
-
+    add(
+      "Messaging Service",
+      "message",
+      "Handles real-time communication between users."
+    );
   }
 
-
-  // Notification
+  // Notifications
   if (
     text.includes("notification") ||
     text.includes("alert") ||
     text.includes("email") ||
     text.includes("sms")
   ) {
-
-    components.push({
-      name: "Notification Service",
-      type: "notification",
-      description:
-        "Sends notifications and system alerts"
-    });
-
+    add(
+      "Notification Service",
+      "notification",
+      "Sends system notifications and alerts."
+    );
   }
-
 
   // Search
   if (
     text.includes("search") ||
     text.includes("filter")
   ) {
-
-    components.push({
-      name: "Search Service",
-      type: "search",
-      description:
-        "Provides fast search and filtering"
-    });
-
+    add(
+      "Search Service",
+      "search",
+      "Provides fast search and filtering functionality."
+    );
   }
 
-
-  // Tracking / maps
+  // Tracking
   if (
     text.includes("track") ||
+    text.includes("tracking") ||
     text.includes("location") ||
     text.includes("map")
   ) {
-
-    components.push({
-      name: "Tracking Service",
-      type: "server",
-      description:
-        "Processes location and tracking data"
-    });
-
+    add(
+      "Tracking Service",
+      "tracking",
+      "Handles location and real-time tracking."
+    );
   }
-
 
   // AI
   if (
@@ -472,348 +283,193 @@ function analyzeRequirement(
     text.includes("prediction") ||
     text.includes("recommendation")
   ) {
-
-    components.push({
-      name: "AI Engine",
-      type: "ai",
-      description:
-        "Processes intelligent predictions and recommendations"
-    });
-
+    add(
+      "AI Engine",
+      "ai",
+      "Provides intelligent predictions and recommendations."
+    );
   }
 
-
   // Cache
-  components.push({
-    name: "Cache",
-    type: "cache",
-    description:
-      "Provides fast access to frequently used data"
-  });
-
+  add(
+    "Cache",
+    "cache",
+    "Stores frequently accessed data for faster responses."
+  );
 
   // Database
-  components.push({
-    name: "Database",
-    type: "database",
-    description:
-      "Stores persistent application data"
-  });
-
-
-  return removeDuplicates(
-    components
+  add(
+    "Database",
+    "database",
+    "Stores application data securely."
   );
+
+  return removeDuplicates(components);
 }
 
 
-/* ------------------------------------------
-   ARCHITECTURE RENDERING
------------------------------------------- */
+/* ================================
+   GENERATE ARCHITECTURE
+================================ */
 
 function renderArchitecture(
   components: Component[],
   requirement: string
-): void {
+) {
 
-  architecture.innerHTML = `
+  if (!architectureContainer) return;
 
-    <div class="architecture-flow">
+  let html = "";
 
-      ${components
-        .map(
-          (component, index) => `
-
-            ${createNode(component)}
-
-            ${
-              index <
-              components.length - 1
-                ? `<div class="arrow">→</div>`
-                : ""
-            }
-
-          `
-        )
-        .join("")}
-
-    </div>
-
-    <div class="requirement-preview">
-
+  html += `
+    <div class="requirement-display">
       <strong>Analyzed Requirement:</strong>
-
-      ${escapeHtml(requirement)}
-
+      <p>${escapeHtml(requirement)}</p>
     </div>
-
   `;
-}
 
+  html += `
+    <div class="architecture-flow">
+  `;
 
-/* ------------------------------------------
-   NODE CREATOR
------------------------------------------- */
+  components.forEach((component, index) => {
 
-function createNode(
-  component: Component
-): string {
+    html += `
+      <div class="architecture-node">
 
-  return `
+        <div class="node-icon">
+          ${getIcon(component.type)}
+        </div>
 
-    <div class="architecture-node ${component.type}">
+        <div class="node-name">
+          ${escapeHtml(component.name)}
+        </div>
 
-      <div class="node-icon">
-        ${getIcon(component.type)}
-      </div>
-
-      <div>
-
-        <h3>
-          ${component.name}
-        </h3>
-
-        <p>
-          ${component.description}
-        </p>
+        <div class="node-description">
+          ${escapeHtml(component.description)}
+        </div>
 
       </div>
+    `;
 
+    if (index < components.length - 1) {
+      html += `
+        <div class="architecture-arrow">
+          →
+        </div>
+      `;
+    }
+
+  });
+
+  html += `
     </div>
-
   `;
+
+  architectureContainer.innerHTML = html;
 }
 
 
-/* ------------------------------------------
-   ICONS
------------------------------------------- */
-
-function getIcon(
-  type: string
-): string {
-
-  switch (type) {
-
-    case "gateway":
-      return "⇄";
-
-    case "auth":
-      return "♙";
-
-    case "server":
-      return "◆";
-
-    case "payment":
-      return "₹";
-
-    case "notification":
-      return "🔔";
-
-    case "search":
-      return "⌕";
-
-    case "tracking":
-      return "⌖";
-
-    case "ai":
-      return "✦";
-
-    case "cache":
-      return "◉";
-
-    case "database":
-      return "▤";
-
-    default:
-      return "◇";
-  }
-}
-
-
-/* ------------------------------------------
-   AI-STYLE ANALYSIS
------------------------------------------- */
+/* ================================
+   ANALYSIS
+================================ */
 
 function renderAnalysis(
-  requirement: string,
   components: Component[],
+  requirement: string,
   users: number,
   rps: number
-): void {
+) {
 
-  const scalability =
-    getScalabilityMessage(rps);
+  if (!analysisContainer) return;
 
-  const storage =
-    getStorageMessage(users);
+  const scalability = getScalability(rps);
+
+  const storage = getStorageRecommendation(users);
+
+  const risks = getRisks(
+    components,
+    users,
+    rps,
+    requirement
+  );
+
+  const testing = getTestingRecommendations(
+    components
+  );
 
   const architectureType =
-    getArchitectureType(
-      components
-    );
+    getArchitectureType(components);
 
-  const risks =
-    detectRisks(
-      requirement,
-      users,
-      rps
-    );
+  analysisContainer.innerHTML = `
 
-  const testing =
-    getTestingRecommendations(
-      components
-    );
+    <div class="analysis-grid">
 
-
-  analysis.innerHTML = `
-
-    <div class="analysis-box">
-
-      <span class="analysis-icon">
-        ✦
-      </span>
-
-      <div>
-
-        <h3>System Understanding</h3>
-
+      <div class="analysis-card">
+        <h3>🧠 System Understanding</h3>
         <p>
-          DevTwin identified this as a
-          <strong>${architectureType}</strong>
-          based on the application requirements.
+          DevTwin analyzed the application requirement and
+          identified ${components.length} major architectural components.
         </p>
-
       </div>
 
-    </div>
-
-
-    <div class="analysis-box">
-
-      <span class="analysis-icon">
-        ⚡
-      </span>
-
-      <div>
-
-        <h3>Scalability</h3>
-
-        <p>
-          ${scalability}
-        </p>
-
+      <div class="analysis-card">
+        <h3>📈 Scalability</h3>
+        <p>${scalability}</p>
       </div>
 
-    </div>
-
-
-    <div class="analysis-box">
-
-      <span class="analysis-icon">
-        ◈
-      </span>
-
-      <div>
-
-        <h3>Traffic Analysis</h3>
-
+      <div class="analysis-card">
+        <h3>🚦 Traffic Analysis</h3>
         <p>
+          Expected traffic:
+          <strong>${rps.toLocaleString()}</strong>
+          requests/second.
+        </p>
+      </div>
 
+      <div class="analysis-card">
+        <h3>👥 User Scale</h3>
+        <p>
           Expected users:
-          <strong>
-            ${users.toLocaleString()}
-          </strong>
-
-          <br />
-
-          Requests/second:
-          <strong>
-            ${rps.toLocaleString()}
-          </strong>
-
+          <strong>${users.toLocaleString()}</strong>.
         </p>
-
       </div>
 
-    </div>
-
-
-    <div class="analysis-box">
-
-      <span class="analysis-icon">
-        ⚠
-      </span>
-
-      <div>
-
-        <h3>Potential Risks</h3>
-
-        <p>
-          ${risks}
-        </p>
-
+      <div class="analysis-card">
+        <h3>⚠️ Potential Risks</h3>
+        <ul>
+          ${risks.map(risk => `<li>${risk}</li>`).join("")}
+        </ul>
       </div>
 
-    </div>
-
-
-    <div class="analysis-box">
-
-      <span class="analysis-icon">
-        🧪
-      </span>
-
-      <div>
-
-        <h3>Testing Recommendations</h3>
-
-        <p>
-          ${testing}
-        </p>
-
+      <div class="analysis-card">
+        <h3>🧪 Testing Recommendations</h3>
+        <ul>
+          ${testing.map(test => `<li>${test}</li>`).join("")}
+        </ul>
       </div>
 
-    </div>
-
-
-    <div class="analysis-box">
-
-      <span class="analysis-icon">
-        ▣
-      </span>
-
-      <div>
-
-        <h3>Data Storage</h3>
-
-        <p>
-          ${storage}
-        </p>
-
+      <div class="analysis-card">
+        <h3>💾 Data Storage</h3>
+        <p>${storage}</p>
       </div>
 
-    </div>
-
-
-    <div class="analysis-box">
-
-      <span class="analysis-icon">
-        ✓
-      </span>
-
-      <div>
-
-        <h3>Architecture Recommendation</h3>
-
+      <div class="analysis-card">
+        <h3>🏗️ Architecture Type</h3>
         <p>
-          ${getRecommendation(
+          <strong>${architectureType}</strong>
+        </p>
+      </div>
+
+      <div class="analysis-card recommendation-card">
+        <h3>💡 Architecture Recommendation</h3>
+        <p>
+          ${getArchitectureRecommendation(
             components,
             users,
             rps
           )}
         </p>
-
       </div>
 
     </div>
@@ -822,90 +478,77 @@ function renderAnalysis(
 }
 
 
-/* ------------------------------------------
+/* ================================
    SCALABILITY
------------------------------------------- */
+================================ */
 
-function getScalabilityMessage(
-  rps: number
-): string {
+function getScalability(rps: number): string {
 
   if (rps >= 5000) {
-
     return `
-      Very high traffic detected.
+      Very high traffic is expected.
       Use horizontal scaling, load balancing,
-      multiple application servers and
-      distributed caching.
+      distributed caching and multiple application servers.
     `;
-
   }
 
   if (rps >= 1000) {
-
     return `
-      Moderate-to-high traffic detected.
-      Caching, multiple application servers
-      and load balancing are recommended.
+      Moderate-to-high traffic is expected.
+      Use caching, multiple application servers
+      and load balancing.
     `;
-
   }
 
   if (rps >= 500) {
-
     return `
-      Medium traffic detected.
-      The system should be designed with
-      caching and scalable services.
+      Medium traffic is expected.
+      A scalable application architecture with
+      caching should be sufficient.
     `;
-
   }
 
   return `
-    Current traffic is manageable with a
-    basic scalable architecture.
+    Basic scalable architecture should be sufficient
+    for the expected traffic.
   `;
 }
 
 
-/* ------------------------------------------
+/* ================================
    STORAGE
------------------------------------------- */
+================================ */
 
-function getStorageMessage(
+function getStorageRecommendation(
   users: number
 ): string {
 
   if (users >= 1000000) {
-
     return `
-      Very large user base detected.
+      Very large user scale.
       Consider database sharding, replication,
       indexing and distributed storage.
     `;
-
   }
 
   if (users >= 100000) {
-
     return `
-      Large user base detected.
-      Use indexing, backups, replication
-      and optimized database queries.
+      Large user scale.
+      Use database indexing, backups,
+      replication and optimized queries.
     `;
-
   }
 
   return `
-    A standard relational or NoSQL database
-    can handle the expected workload.
+    Standard relational or NoSQL database
+    architecture should be sufficient.
   `;
 }
 
 
-/* ------------------------------------------
+/* ================================
    ARCHITECTURE TYPE
------------------------------------------- */
+================================ */
 
 function getArchitectureType(
   components: Component[]
@@ -913,288 +556,335 @@ function getArchitectureType(
 
   if (
     components.some(
-      c => c.type === "ai"
+      component => component.type === "ai"
     )
   ) {
     return "AI-enabled distributed application";
   }
 
-  if (
-    components.length >= 7
-  ) {
-    return "modular distributed application";
+  if (components.length >= 7) {
+    return "Modular distributed application";
   }
 
-  return "scalable web application";
+  return "Scalable web application";
 }
 
 
-/* ------------------------------------------
-   RISK DETECTION
------------------------------------------- */
+/* ================================
+   RISKS
+================================ */
 
-function detectRisks(
-  requirement: string,
+function getRisks(
+  components: Component[],
   users: number,
-  rps: number
-): string {
+  rps: number,
+  requirement: string
+): string[] {
 
   const risks: string[] = [];
 
-  const text =
-    requirement.toLowerCase();
-
+  const text = requirement.toLowerCase();
 
   if (rps >= 5000) {
-
     risks.push(
-      "high traffic bottlenecks"
+      "High traffic may create performance bottlenecks."
     );
-
   }
-
 
   if (users >= 100000) {
-
     risks.push(
-      "database scalability"
+      "Database scalability should be carefully planned."
     );
-
   }
-
 
   if (
     text.includes("payment") ||
     text.includes("transaction")
   ) {
-
     risks.push(
-      "payment security"
+      "Payment security and transaction reliability are critical."
     );
-
   }
-
 
   if (
     text.includes("login") ||
-    text.includes("account")
+    text.includes("account") ||
+    text.includes("authentication")
   ) {
-
     risks.push(
-      "authentication security"
+      "Authentication and authorization must be secured."
     );
-
   }
-
 
   if (
-    text.includes("track") ||
-    text.includes("location")
+    text.includes("location") ||
+    text.includes("tracking")
   ) {
-
     risks.push(
-      "real-time data processing"
+      "Real-time tracking may require efficient data processing."
     );
-
   }
 
-
-  if (
-    risks.length === 0
-  ) {
-
-    return `
-      No major architectural risks were
-      detected from the provided requirements.
-    `;
-
+  if (risks.length === 0) {
+    risks.push(
+      "No major architectural risks detected from the provided requirement."
+    );
   }
 
-
-  return `
-    Pay attention to:
-    ${risks.join(", ")}.
-  `;
+  return risks;
 }
 
 
-/* ------------------------------------------
+/* ================================
    TESTING
------------------------------------------- */
+================================ */
 
 function getTestingRecommendations(
   components: Component[]
-): string {
+): string[] {
 
-  const tests: string[] = [
+  const recommendations: string[] = [
     "API testing",
-    "integration testing"
+    "Integration testing",
+    "Load and performance testing"
   ];
 
-
   if (
     components.some(
-      c => c.type === "payment"
+      component => component.type === "payment"
     )
   ) {
-
-    tests.push(
-      "payment transaction testing"
+    recommendations.push(
+      "Payment transaction testing"
     );
-
   }
 
-
   if (
     components.some(
-      c => c.type === "ai"
+      component => component.type === "ai"
     )
   ) {
-
-    tests.push(
+    recommendations.push(
       "AI prediction validation"
     );
-
   }
-
 
   if (
     components.some(
-      c => c.type === "notification"
+      component => component.type === "notification"
     )
   ) {
-
-    tests.push(
-      "notification delivery testing"
+    recommendations.push(
+      "Notification delivery testing"
     );
-
   }
 
-
-  tests.push(
-    "load and performance testing"
-  );
-
-
-  return `
-    Recommended: ${tests.join(", ")}.
-  `;
+  return recommendations;
 }
 
 
-/* ------------------------------------------
-   FINAL RECOMMENDATION
------------------------------------------- */
+/* ================================
+   RECOMMENDATION
+================================ */
 
-function getRecommendation(
+function getArchitectureRecommendation(
   components: Component[],
   users: number,
   rps: number
 ): string {
 
-  let recommendation =
-    "Use modular services with an API Gateway, caching and a reliable database.";
-
+  const recommendations: string[] = [];
 
   if (
     users >= 100000 ||
     rps >= 1000
   ) {
+    recommendations.push(
+      "Use load balancing and horizontal scaling."
+    );
 
-    recommendation =
-      "Use load balancing, horizontal scaling, caching, database replication and independent services for major business functions.";
+    recommendations.push(
+      "Use caching to reduce database load."
+    );
 
+    recommendations.push(
+      "Consider database replication."
+    );
   }
-
 
   if (
     components.some(
-      c => c.type === "payment"
+      component => component.type === "payment"
     )
   ) {
-
-    recommendation +=
-      " Secure payment operations and never store sensitive payment credentials directly.";
-
+    recommendations.push(
+      "Apply strong payment security and transaction validation."
+    );
   }
-
 
   if (
     components.some(
-      c => c.type === "ai"
+      component => component.type === "ai"
     )
   ) {
-
-    recommendation +=
-      " Monitor AI predictions and validate model outputs before using them in critical workflows.";
-
+    recommendations.push(
+      "Monitor AI model performance and prediction accuracy."
+    );
   }
 
+  if (recommendations.length === 0) {
+    recommendations.push(
+      "Use a modular architecture with scalable services and proper monitoring."
+    );
+  }
 
-  return recommendation;
+  return recommendations.join(" ");
 }
 
 
-/* ------------------------------------------
+/* ================================
+   ICONS
+================================ */
+
+function getIcon(type: string): string {
+
+  const icons: Record<string, string> = {
+
+    gateway: "🌐",
+
+    auth: "🔐",
+
+    product: "📦",
+
+    order: "🛒",
+
+    restaurant: "🍴",
+
+    delivery: "🚚",
+
+    payment: "💳",
+
+    message: "💬",
+
+    notification: "🔔",
+
+    search: "🔎",
+
+    tracking: "📍",
+
+    ai: "🤖",
+
+    cache: "⚡",
+
+    database: "🗄️"
+  };
+
+  return icons[type] || "⚙️";
+}
+
+
+/* ================================
    REMOVE DUPLICATES
------------------------------------------- */
+================================ */
 
 function removeDuplicates(
   components: Component[]
 ): Component[] {
 
-  const seen =
-    new Set<string>();
+  const seen = new Set<string>();
 
-  return components.filter(
-    component => {
+  return components.filter(component => {
 
-      if (
-        seen.has(
-          component.name
-        )
-      ) {
+    if (seen.has(component.name)) {
+      return false;
+    }
 
-        return false;
-      }
+    seen.add(component.name);
 
-      seen.add(
-        component.name
+    return true;
+  });
+}
+
+
+/* ================================
+   SECURITY
+================================ */
+
+function escapeHtml(value: string): string {
+
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+
+/* ================================
+   BUTTON
+================================ */
+
+analyzeButton?.addEventListener(
+  "click",
+  () => {
+
+    const requirement =
+      requirementInput?.value.trim() || "";
+
+    const users =
+      Number(usersInput?.value || 0);
+
+    const rps =
+      Number(rpsInput?.value || 0);
+
+    if (!requirement) {
+
+      alert(
+        "Please enter an application requirement."
       );
 
-      return true;
+      return;
     }
-  );
-}
 
+    if (users <= 0 || rps <= 0) {
 
-/* ------------------------------------------
-   HTML SECURITY
------------------------------------------- */
+      alert(
+        "Please enter valid users and requests/second values."
+      );
 
-function escapeHtml(
-  text: string
-): string {
+      return;
+    }
 
-  return text
-    .replace(
-      /&/g,
-      "&amp;"
-    )
-    .replace(
-      /</g,
-      "&lt;"
-    )
-    .replace(
-      />/g,
-      "&gt;"
-    )
-    .replace(
-      /"/g,
-      "&quot;"
-    )
-    .replace(
-      /'/g,
-      "&#039;"
+    const components =
+      analyzeRequirement(
+        requirement,
+        users,
+        rps
+      );
+
+    renderArchitecture(
+      components,
+      requirement
     );
-}
+
+    renderAnalysis(
+      components,
+      requirement,
+      users,
+      rps
+    );
+
+    architectureSection?.classList.remove(
+      "hidden"
+    );
+
+    analysisSection?.classList.remove(
+      "hidden"
+    );
+
+    architectureSection?.scrollIntoView({
+      behavior: "smooth"
+    });
+  }
+);
