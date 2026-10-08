@@ -1,7 +1,7 @@
 import { defineConfig } from "vite";
 
 export default defineConfig({
-  base: "/Devtwin/",
+  base: "/",
   server: {
     port: 5176,
     strictPort: true
