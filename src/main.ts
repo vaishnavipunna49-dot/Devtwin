@@ -63,7 +63,6 @@ function analyze(
   users: number,
   rps: number
 ): Result {
-
   const text = requirement.toLowerCase();
 
   const components: Component[] = [
@@ -334,26 +333,44 @@ function analyze(
 }
 
 /* =========================================
-   ARCHITECTURE DIAGRAM
+   DYNAMIC ARCHITECTURE DIAGRAM
 ========================================= */
 
-function renderArchitectureDiagram(
-  components: Component[]
-): string {
+function renderDiagram(result: Result): string {
+  const important = result.components.filter(
+    c =>
+      c.name !== "Client" &&
+      c.name !== "API Gateway" &&
+      c.name !== "Database" &&
+      c.name !== "Cache" &&
+      c.name !== "Load Balancer"
+  );
 
-  const nodes = components.map(
-    (component, index) => {
+  const serviceNodes = important
+    .slice(0, 6)
+    .map((component, index) => {
+      const positions = [
+        { left: "610px", top: "25px" },
+        { left: "610px", top: "120px" },
+        { left: "610px", top: "215px" },
+        { left: "820px", top: "25px" },
+        { left: "820px", top: "120px" },
+        { left: "820px", top: "215px" }
+      ];
 
-      const x = 40 + index * 210;
+      const position =
+        positions[index] || positions[0];
 
       return `
         <div
           class="diagram-node"
-          style="left:${x}px"
+          style="
+            left:${position.left};
+            top:${position.top};
+          "
         >
-
           <div class="diagram-icon">
-            ${icons[component.name] || "◈"}
+            ${icons[component.name] || "⚙️"}
           </div>
 
           <strong>
@@ -365,79 +382,200 @@ function renderArchitectureDiagram(
           </small>
 
           <span>
-            ${component.load}% load
+            ${escapeHTML(component.description)}
           </span>
-
-        </div>
-      `;
-    }
-  ).join("");
-
-  const arrows = components
-    .slice(0, -1)
-    .map((_, index) => {
-
-      const x = 195 + index * 210;
-
-      return `
-        <div
-          class="diagram-arrow"
-          style="left:${x}px"
-        >
-          →
         </div>
       `;
     })
     .join("");
 
-  const width = Math.max(
-    900,
-    components.length * 210
-  );
-
   return `
-    <div class="architecture-diagram">
+    <section class="diagram-section">
 
-      <div
-        class="diagram-canvas"
-        style="width:${width}px"
-      >
+      <div class="diagram-heading">
 
-        ${arrows}
+        <div>
+          <span class="kicker">
+            SYSTEM ARCHITECTURE
+          </span>
 
-        ${nodes}
+          <h2>
+            Dynamic Architecture Diagram
+          </h2>
+        </div>
+
+        <span class="diagram-status">
+          ● GENERATED
+        </span>
 
       </div>
 
-    </div>
+      <div class="architecture-diagram">
+
+        <div class="diagram-canvas">
+
+          <div
+            class="diagram-node"
+            style="left:0; top:120px;"
+          >
+            <div class="diagram-icon">
+              🖥️
+            </div>
+
+            <strong>
+              Client
+            </strong>
+
+            <small>
+              Frontend
+            </small>
+
+            <span>
+              Web / Mobile
+            </span>
+          </div>
+
+          <div
+            class="diagram-node"
+            style="left:200px; top:120px;"
+          >
+            <div class="diagram-icon">
+              🚪
+            </div>
+
+            <strong>
+              API Gateway
+            </strong>
+
+            <small>
+              Edge
+            </small>
+
+            <span>
+              API Routing
+            </span>
+          </div>
+
+          <div
+            class="diagram-node"
+            style="left:400px; top:120px;"
+          >
+            <div class="diagram-icon">
+              ⚖️
+            </div>
+
+            <strong>
+              Load Balancer
+            </strong>
+
+            <small>
+              Traffic
+            </small>
+
+            <span>
+              ${result.rps.toLocaleString()} RPS
+            </span>
+          </div>
+
+          ${serviceNodes}
+
+          <div
+            class="diagram-node"
+            style="left:820px; top:310px;"
+          >
+            <div class="diagram-icon">
+              ⚡
+            </div>
+
+            <strong>
+              Cache
+            </strong>
+
+            <small>
+              Performance
+            </small>
+
+            <span>
+              Fast Reads
+            </span>
+          </div>
+
+          <div
+            class="diagram-node"
+            style="left:610px; top:310px;"
+          >
+            <div class="diagram-icon">
+              🗄️
+            </div>
+
+            <strong>
+              Database
+            </strong>
+
+            <small>
+              Storage
+            </small>
+
+            <span>
+              Persistent Data
+            </span>
+          </div>
+
+          <div
+            class="diagram-line"
+            style="
+              left:165px;
+              top:172px;
+              width:35px;
+            "
+          ></div>
+
+          <div
+            class="diagram-line"
+            style="
+              left:365px;
+              top:172px;
+              width:35px;
+            "
+          ></div>
+
+          <div
+            class="diagram-line"
+            style="
+              left:565px;
+              top:172px;
+              width:45px;
+            "
+          ></div>
+
+        </div>
+
+      </div>
+
+    </section>
   `;
 }
 
-/* =========================================
-   RENDER RESULTS
-========================================= */
-
 function render(result: Result) {
-
   const results =
     document.querySelector("#results")!;
 
   results.innerHTML = `
+
+    ${renderDiagram(result)}
 
     <section class="card">
 
       <div class="heading">
 
         <div>
-
           <span class="kicker">
-            02 / ARCHITECTURE
+            02 / ARCHITECTURE ANALYSIS
           </span>
 
           <h2>
             Recommended System Design
           </h2>
-
         </div>
 
         <button
@@ -488,43 +626,52 @@ function render(result: Result) {
 
       </div>
 
-    </section>
+      <div class="architecture">
 
-    <section class="diagram-section">
+        ${result.components
+          .map(
+            c => `
+              <div class="node-wrap">
 
-      <div class="diagram-heading">
+                <div class="node">
 
-        <div>
+                  <div class="node-icon">
+                    ${icons[c.name] || "◈"}
+                  </div>
 
-          <span class="kicker">
-            SYSTEM ARCHITECTURE
-          </span>
+                  <strong>
+                    ${escapeHTML(c.name)}
+                  </strong>
 
-          <h2>
-            Architecture Diagram
-          </h2>
+                  <small>
+                    ${escapeHTML(c.type)}
+                  </small>
 
-        </div>
+                  <div class="bar">
+                    <span
+                      style="width:${c.load}%"
+                    ></span>
+                  </div>
 
-        <span class="diagram-status">
-          Generated automatically
-        </span>
+                  <em>
+                    ${c.load}% load
+                  </em>
+
+                </div>
+
+              </div>
+            `
+          )
+          .join("")}
 
       </div>
-
-      ${renderArchitectureDiagram(
-        result.components
-      )}
 
     </section>
 
     <section class="analysis-grid">
 
       <div class="analysis">
-
-        <h3>
-          📈 Scalability
-        </h3>
+        <h3>📈 Scalability</h3>
 
         <p>
           ${
@@ -535,26 +682,18 @@ function render(result: Result) {
               : "Vertical scaling is sufficient initially."
           }
         </p>
-
       </div>
 
       <div class="analysis">
-
-        <h3>
-          🗃️ Storage
-        </h3>
+        <h3>🗃️ Storage</h3>
 
         <p>
           Managed relational database with caching is recommended.
         </p>
-
       </div>
 
       <div class="analysis">
-
-        <h3>
-          🏗️ Architecture
-        </h3>
+        <h3>🏗️ Architecture</h3>
 
         <p>
           ${
@@ -563,14 +702,11 @@ function render(result: Result) {
               : "Modular scalable architecture"
           }
         </p>
-
       </div>
 
       <div class="analysis">
 
-        <h3>
-          ⚠️ Bottlenecks
-        </h3>
+        <h3>⚠️ Bottlenecks</h3>
 
         ${
           result.bottlenecks.length
@@ -595,9 +731,7 @@ function render(result: Result) {
 
       <div class="analysis">
 
-        <h3>
-          🧪 Testing
-        </h3>
+        <h3>🧪 Testing</h3>
 
         <ul>
           <li>Unit testing</li>
@@ -610,9 +744,7 @@ function render(result: Result) {
 
       <div class="analysis">
 
-        <h3>
-          🛡️ Risks
-        </h3>
+        <h3>🛡️ Risks</h3>
 
         <ul>
           <li>Database growth</li>
@@ -629,7 +761,6 @@ function render(result: Result) {
       <div class="heading">
 
         <div>
-
           <span class="kicker">
             03 / LIVE SIMULATION
           </span>
@@ -637,7 +768,6 @@ function render(result: Result) {
           <h2>
             Traffic Simulator
           </h2>
-
         </div>
 
         <button
@@ -755,7 +885,6 @@ function render(result: Result) {
           .map(
             (r, i) => `
               <div>
-
                 <b>
                   ${String(i + 1).padStart(2, "0")}
                 </b>
@@ -763,7 +892,6 @@ function render(result: Result) {
                 <span>
                   ${escapeHTML(r)}
                 </span>
-
               </div>
             `
           )
@@ -789,12 +917,7 @@ function render(result: Result) {
     );
 }
 
-/* =========================================
-   TRAFFIC SIMULATION
-========================================= */
-
 function simulate(result: Result) {
-
   const rps =
     document.querySelector("#liveRps")!;
 
@@ -865,7 +988,7 @@ function simulate(result: Result) {
 }
 
 /* =========================================
-   INITIAL APP
+   INITIAL PAGE
 ========================================= */
 
 app.innerHTML = `
@@ -875,13 +998,10 @@ app.innerHTML = `
     <nav class="navbar">
 
       <div class="brand">
-
         DevTwin
-
         <span class="version">
           2.0
         </span>
-
       </div>
 
       <span class="status">
@@ -1021,11 +1141,9 @@ document
         ) || 1;
 
       if (!requirement.trim()) {
-
         alert(
           "Please describe your system."
         );
-
         return;
       }
 
