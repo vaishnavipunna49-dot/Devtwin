@@ -63,6 +63,7 @@ function analyze(
   users: number,
   rps: number
 ): Result {
+
   const text = requirement.toLowerCase();
 
   const components: Component[] = [
@@ -332,16 +333,103 @@ function analyze(
   };
 }
 
+/* =========================================
+   ARCHITECTURE DIAGRAM
+========================================= */
+
+function renderArchitectureDiagram(
+  components: Component[]
+): string {
+
+  const nodes = components.map(
+    (component, index) => {
+
+      const x = 40 + index * 210;
+
+      return `
+        <div
+          class="diagram-node"
+          style="left:${x}px"
+        >
+
+          <div class="diagram-icon">
+            ${icons[component.name] || "◈"}
+          </div>
+
+          <strong>
+            ${escapeHTML(component.name)}
+          </strong>
+
+          <small>
+            ${escapeHTML(component.type)}
+          </small>
+
+          <span>
+            ${component.load}% load
+          </span>
+
+        </div>
+      `;
+    }
+  ).join("");
+
+  const arrows = components
+    .slice(0, -1)
+    .map((_, index) => {
+
+      const x = 195 + index * 210;
+
+      return `
+        <div
+          class="diagram-arrow"
+          style="left:${x}px"
+        >
+          →
+        </div>
+      `;
+    })
+    .join("");
+
+  const width = Math.max(
+    900,
+    components.length * 210
+  );
+
+  return `
+    <div class="architecture-diagram">
+
+      <div
+        class="diagram-canvas"
+        style="width:${width}px"
+      >
+
+        ${arrows}
+
+        ${nodes}
+
+      </div>
+
+    </div>
+  `;
+}
+
+/* =========================================
+   RENDER RESULTS
+========================================= */
+
 function render(result: Result) {
+
   const results =
     document.querySelector("#results")!;
 
   results.innerHTML = `
+
     <section class="card">
 
       <div class="heading">
 
         <div>
+
           <span class="kicker">
             02 / ARCHITECTURE
           </span>
@@ -349,6 +437,7 @@ function render(result: Result) {
           <h2>
             Recommended System Design
           </h2>
+
         </div>
 
         <button
@@ -399,59 +488,43 @@ function render(result: Result) {
 
       </div>
 
-      <div class="architecture">
+    </section>
 
-        ${result.components
-          .map(
-            (c, i) => `
-              <div class="node-wrap">
+    <section class="diagram-section">
 
-                <div class="node">
+      <div class="diagram-heading">
 
-                  <div class="node-icon">
-                    ${icons[c.name] || "◈"}
-                  </div>
+        <div>
 
-                  <strong>
-                    ${escapeHTML(c.name)}
-                  </strong>
+          <span class="kicker">
+            SYSTEM ARCHITECTURE
+          </span>
 
-                  <small>
-                    ${escapeHTML(c.type)}
-                  </small>
+          <h2>
+            Architecture Diagram
+          </h2>
 
-                  <div class="bar">
-                    <span
-                      style="width:${c.load}%"
-                    ></span>
-                  </div>
+        </div>
 
-                  <em>
-                    ${c.load}% load
-                  </em>
-
-                </div>
-
-                ${
-                  i <
-                  result.components.length - 1
-                    ? `<div class="arrow">→</div>`
-                    : ""
-                }
-
-              </div>
-            `
-          )
-          .join("")}
+        <span class="diagram-status">
+          Generated automatically
+        </span>
 
       </div>
+
+      ${renderArchitectureDiagram(
+        result.components
+      )}
 
     </section>
 
     <section class="analysis-grid">
 
       <div class="analysis">
-        <h3>📈 Scalability</h3>
+
+        <h3>
+          📈 Scalability
+        </h3>
 
         <p>
           ${
@@ -462,18 +535,26 @@ function render(result: Result) {
               : "Vertical scaling is sufficient initially."
           }
         </p>
+
       </div>
 
       <div class="analysis">
-        <h3>🗃️ Storage</h3>
+
+        <h3>
+          🗃️ Storage
+        </h3>
 
         <p>
           Managed relational database with caching is recommended.
         </p>
+
       </div>
 
       <div class="analysis">
-        <h3>🏗️ Architecture</h3>
+
+        <h3>
+          🏗️ Architecture
+        </h3>
 
         <p>
           ${
@@ -482,11 +563,14 @@ function render(result: Result) {
               : "Modular scalable architecture"
           }
         </p>
+
       </div>
 
       <div class="analysis">
 
-        <h3>⚠️ Bottlenecks</h3>
+        <h3>
+          ⚠️ Bottlenecks
+        </h3>
 
         ${
           result.bottlenecks.length
@@ -511,7 +595,9 @@ function render(result: Result) {
 
       <div class="analysis">
 
-        <h3>🧪 Testing</h3>
+        <h3>
+          🧪 Testing
+        </h3>
 
         <ul>
           <li>Unit testing</li>
@@ -524,7 +610,9 @@ function render(result: Result) {
 
       <div class="analysis">
 
-        <h3>🛡️ Risks</h3>
+        <h3>
+          🛡️ Risks
+        </h3>
 
         <ul>
           <li>Database growth</li>
@@ -541,6 +629,7 @@ function render(result: Result) {
       <div class="heading">
 
         <div>
+
           <span class="kicker">
             03 / LIVE SIMULATION
           </span>
@@ -548,6 +637,7 @@ function render(result: Result) {
           <h2>
             Traffic Simulator
           </h2>
+
         </div>
 
         <button
@@ -665,6 +755,7 @@ function render(result: Result) {
           .map(
             (r, i) => `
               <div>
+
                 <b>
                   ${String(i + 1).padStart(2, "0")}
                 </b>
@@ -672,6 +763,7 @@ function render(result: Result) {
                 <span>
                   ${escapeHTML(r)}
                 </span>
+
               </div>
             `
           )
@@ -697,7 +789,12 @@ function render(result: Result) {
     );
 }
 
+/* =========================================
+   TRAFFIC SIMULATION
+========================================= */
+
 function simulate(result: Result) {
+
   const rps =
     document.querySelector("#liveRps")!;
 
@@ -767,6 +864,10 @@ function simulate(result: Result) {
   }, 400);
 }
 
+/* =========================================
+   INITIAL APP
+========================================= */
+
 app.innerHTML = `
 
   <div class="app">
@@ -774,10 +875,13 @@ app.innerHTML = `
     <nav class="navbar">
 
       <div class="brand">
+
         DevTwin
+
         <span class="version">
           2.0
         </span>
+
       </div>
 
       <span class="status">
@@ -917,9 +1021,11 @@ document
         ) || 1;
 
       if (!requirement.trim()) {
+
         alert(
           "Please describe your system."
         );
+
         return;
       }
 
